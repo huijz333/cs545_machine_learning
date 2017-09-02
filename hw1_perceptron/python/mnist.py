@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import struct
 import gzip
@@ -65,4 +66,11 @@ def load_data(label_file, image_file):
         images = np.frombuffer(buf, dtype=np.uint8).astype(np.float32)
         images = np.divide(images, np.max(images))
         images = images.reshape(size, rows, cols)
-    return labels, images
+    return images, labels
+
+
+def show_digit(pixels, label=False):
+    if label:
+        plt.title('Label = {}'.format(label))
+    plt.imshow(pixels, cmap='gray')
+    plt.show()
