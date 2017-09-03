@@ -6,6 +6,7 @@ class Perceptron(object):
                  alpha=0.0001,
                  eta0=1.0,
                  n_iter=10,
+                 n_out=2,
                  grad_descent='stochastic',
                  batch_size=None,
                  max_iter=None,
@@ -13,9 +14,16 @@ class Perceptron(object):
                  shuffle=False,
                  rand_state=True):
 
+        if n_out > 2:
+            # use multiple perceptrons
+            self.multi_ptron = True
+        else:
+            self.multi_ptron = False
+
         self.alpha = alpha
         self.eta0 = eta0
         self.n_iter = n_iter
+        self.n_out = n_out
         self.grad_descent = grad_descent
         self.batch_size = batch_size
         self.max_iter = max_iter
@@ -39,43 +47,67 @@ class Perceptron(object):
 
     def init_weights(self, input_shape):
         rows, cols = input_shape[1], input_shape[2]
-        if self.rand_state:
-            w = np.random.uniform(-0.05, 0.05, rows * cols + 1)
+        if self.multi_ptron:
+            if self.rand_state:
+                w = np.random.uniform(-0.05, 0.05, (rows * cols + 1, self.n_out))
+            else:
+                w = np.zeros((rows * cols + 1, self.n_out))
         else:
-            w = np.zeros(rows * cols + 1)
+            if self.rand_state:
+                w = np.random.uniform(-0.05, 0.05, rows * cols + 1)
+            else:
+                w = np.zeros(rows * cols + 1)
         return w
 
     def __fit_stochastic(self, X, y):
         samples = X.shape[0]
         ind = np.arange(samples)
-        for _ in range(self.n_iter):
-            if self.shuffle:    # shuffle samples
-                ind = np.random.shuffle(ind)
-            for i in ind:
-                output = self.w[0] + np.dot(X[i].flatten(), self.w[1:])
-                if output > 0:      # Postive prediction
-                    if y[i] != 0:   # False positive
-                        self.w[0] -= self.eta0
-                        self.w[1:] -= self.eta0 * X[i].flatten()
-                else:               # Negative prediction
-                    if y[i] == 0:   # Miss detection
-                        self.w[0] += self.eta0
-                        self.w[1:] += self.eta0 * X[i].flatten()
+        if self.multi_ptron:
+            for _ in range(self.n_iter):
+                if self.shuffle:    # shuffle samples
+                    ind = np.random.shuffle(ind)
+                for i in ind:
+                    output = self.w[0] + np.dot(X[i].flatten(), self.w[1:])
+                    for j in range(self.n_out):
+                        if output[j] > 0:      # Postive prediction
+                            if y[i] != j:   # False positive
+                                self.w[0, j] -= self.eta0
+                                self.w[1:, j] -= self.eta0 * X[i].flatten()
+                        else:               # Negative prediction
+                            if y[i] == j:   # Miss detection
+                                self.w[0, j] += self.eta0
+                                self.w[1:, j] += self.eta0 * X[i].flatten()
+
+        else:
+            for _ in range(self.n_iter):
+                if self.shuffle:    # shuffle samples
+                    ind = np.random.shuffle(ind)
+                for i in ind:
+                    output = self.w[0] + np.dot(X[i].flatten(), self.w[1:])
+                    if output > 0:      # Postive prediction
+                        if y[i] != 0:   # False positive
+                            self.w[0] -= self.eta0
+                            self.w[1:] -= self.eta0 * X[i].flatten()
+                    else:               # Negative prediction
+                        if y[i] == 0:   # Miss detection
+                            self.w[0] += self.eta0
+                            self.w[1:] += self.eta0 * X[i].flatten()
+
 
         for i in range(100):
             output = self.w[0] + np.dot(X[i].flatten(), self.w[1:])
-            if output > 0:      # Postive prediction
-                print('Positive prediction:', end=' ')
-                if y[i] != 0:   # False positive
-                    print('INCORRECT')
-                else:
-                    print('correct')
-            else:               # Negative prediction
-                print('Negative prediction:', end=' ')
-                if y[i] == 0:   # Miss detection
-                    print('INCORRECT')
-                else:
-                    print('correct')
+            pred = np.argmax(output)
+            print('{} Positive prediction:'.format(pred), end=' ')
+            if y[i] != pred:   # False positive
+                print('INCORRECT')
+            else:
+                print('correct')
+            # else:               # Negative prediction
+            #     print('Negative prediction:', end=' ')
+            #     if y[i] == 0:   # Miss detection
+            #         print('INCORRECT')
+            #     else:
+            #         print('correct')
 
         return None
 
