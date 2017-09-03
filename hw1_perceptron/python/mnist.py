@@ -74,3 +74,10 @@ def show_digit(pixels, label=False):
         plt.title('Label = {}'.format(label))
     plt.imshow(pixels, cmap='gray')
     plt.show()
+    # w, h = 28, 28
+    # data = np.zeros((h, w), dtype=np.uint8)
+    # data[14:27, 14] = 255 
+    # img = Image.fromarray(data, 'L')
+    # img = img.resize((256, 256), 0)
+    # #img.save('my.png')ind
+    # img.show()
